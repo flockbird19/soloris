@@ -1,0 +1,9 @@
+
+    From: notifications@hdfcbank.com
+    Subject: Your HDFC Bank Account 99887700 statement
+    Body: Dear Customer, your monthly statement for Account No: 99887700 is ready.
+    
+    From: service@licindia.com
+    Subject: LIC Premium Receipt - Policy 123456789
+    Body: Thank you for paying the premium for Policy Number: 123456789.
+    

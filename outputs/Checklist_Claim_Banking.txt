@@ -1,0 +1,6 @@
+📋 CHECKLIST: Claim Banking
+=============
+[ ] Death Certificate
+[ ] Claimant KYC
+[ ] Succession Certificate
+[ ] Cancelled Cheque

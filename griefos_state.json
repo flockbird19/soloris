@@ -1,0 +1,238 @@
+{
+    "identity": {
+        "deceased_name": "Of Deceased",
+        "date_of_death": "15/03/2026",
+        "registration_number": "MH/2026/045891",
+        "raw_text": "GOVERNMENT OF MAHARASHTRA\nDEPARTMENT OF HEALTH\nName of Deceased: Kabir Mehra\nDate of Death: 15/03/2026\nRegistration No: MH/2026/045891\nPlace of Death: Mumbai, Maharashtra",
+        "confidence": 1.0
+    },
+    "tasks": [
+        {
+            "task_id": "collect_dc",
+            "title": "Collect Death Certificate",
+            "status": "completed",
+            "dependencies": [],
+            "required_docs": []
+        },
+        {
+            "task_id": "claim_Banking",
+            "title": "Claim Banking",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Death Certificate",
+                "Claimant KYC",
+                "Succession Certificate",
+                "Cancelled Cheque"
+            ]
+        },
+        {
+            "task_id": "claim_Insurance",
+            "title": "Claim Insurance",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Original Policy Bond",
+                "Death Certificate",
+                "Discharge Form",
+                "ID Proof"
+            ]
+        },
+        {
+            "task_id": "claim_Banking",
+            "title": "Claim Banking",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Death Certificate",
+                "Claimant KYC",
+                "Succession Certificate",
+                "Cancelled Cheque"
+            ]
+        },
+        {
+            "task_id": "claim_Insurance",
+            "title": "Claim Insurance",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Original Policy Bond",
+                "Death Certificate",
+                "Discharge Form",
+                "ID Proof"
+            ]
+        },
+        {
+            "task_id": "claim_Banking",
+            "title": "Claim Banking",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Death Certificate",
+                "Claimant KYC",
+                "Succession Certificate",
+                "Cancelled Cheque"
+            ]
+        },
+        {
+            "task_id": "claim_Insurance",
+            "title": "Claim Insurance",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Original Policy Bond",
+                "Death Certificate",
+                "Discharge Form",
+                "ID Proof"
+            ]
+        },
+        {
+            "task_id": "claim_EPFO",
+            "title": "Claim EPFO",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "UAN Number",
+                "Form 20",
+                "Form 10D",
+                "Aadhaar of Nominee"
+            ]
+        },
+        {
+            "task_id": "claim_Banking",
+            "title": "Claim Banking",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Death Certificate",
+                "Claimant KYC",
+                "Succession Certificate",
+                "Cancelled Cheque"
+            ]
+        },
+        {
+            "task_id": "claim_Insurance",
+            "title": "Claim Insurance",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Original Policy Bond",
+                "Death Certificate",
+                "Discharge Form",
+                "ID Proof"
+            ]
+        },
+        {
+            "task_id": "claim_Banking",
+            "title": "Claim Banking",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Death Certificate",
+                "Claimant KYC",
+                "Succession Certificate",
+                "Cancelled Cheque"
+            ]
+        },
+        {
+            "task_id": "claim_Insurance",
+            "title": "Claim Insurance",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Original Policy Bond",
+                "Death Certificate",
+                "Discharge Form",
+                "ID Proof"
+            ]
+        },
+        {
+            "task_id": "claim_Banking",
+            "title": "Claim Banking",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Death Certificate",
+                "Claimant KYC",
+                "Succession Certificate",
+                "Cancelled Cheque"
+            ]
+        },
+        {
+            "task_id": "claim_Insurance",
+            "title": "Claim Insurance",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "Original Policy Bond",
+                "Death Certificate",
+                "Discharge Form",
+                "ID Proof"
+            ]
+        },
+        {
+            "task_id": "claim_EPFO",
+            "title": "Claim EPFO",
+            "status": "pending",
+            "dependencies": [
+                "collect_dc"
+            ],
+            "required_docs": [
+                "UAN Number",
+                "Form 20",
+                "Form 10D",
+                "Aadhaar of Nominee"
+            ]
+        },
+        {
+            "task_id": "cancel_gym",
+            "title": "Cancel Gym Subscription",
+            "status": "pending",
+            "dependencies": [],
+            "required_docs": []
+        },
+        {
+            "task_id": "cancel_netflix",
+            "title": "Cancel Netflix Subscription",
+            "status": "pending",
+            "dependencies": [],
+            "required_docs": []
+        },
+        {
+            "task_id": "cancel_spotify",
+            "title": "Cancel Spotify Subscription",
+            "status": "pending",
+            "dependencies": [],
+            "required_docs": []
+        }
+    ],
+    "completed_tasks": [
+        "collect_dc"
+    ]
+}
