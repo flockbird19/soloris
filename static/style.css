@@ -1,0 +1,147 @@
+:root {
+    --primary: #4f46e5;
+    --bg-main: #f1f5f9;
+    --sidebar-bg: #ffffff;
+    --text-main: #0f172a;
+    --border: #e2e8f0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-main);
+    margin: 0;
+    display: flex; /* This helps align sidebar and main */
+}
+
+/* SIDEBAR FIX */
+.sidebar {
+    width: 260px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    height: 100vh;
+    position: fixed; /* Keeps it on the left */
+    left: 0;
+    top: 0;
+    padding: 24px;
+    box-sizing: border-box;
+    z-index: 100;
+}
+
+.logo {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--primary);
+    margin-bottom: 2rem;
+}
+
+.nav-item {
+    display: block;
+    padding: 12px;
+    color: #64748b;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.nav-item:hover {
+    background: #f8fafc;
+    color: var(--primary);
+}
+
+/* MAIN CONTENT FIX */
+.main {
+    margin-left: 260px; /* This creates the space for the sidebar */
+    padding: 40px;
+    width: calc(100% - 260px);
+    box-sizing: border-box;
+}
+
+/* CARD STYLING */
+.card {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    margin-bottom: 24px;
+}
+
+.alert {
+    padding: 20px;
+    border-radius: 8px;
+    background: #fff7ed; /* The orange/yellow you see in your screenshot */
+    border: 1px solid #ffedd5;
+}
+.btn {
+    background: #4f46e5;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.badge {
+    background: #eef2ff;
+    color: #4f46e5;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.muted {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+/* Container for the form */
+.upload-container {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+}
+
+/* Style the File Input area */
+.file-input {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    background: #f8fafc;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text-muted);
+    transition: border-color 0.2s;
+}
+
+.file-input:hover {
+    border-color: var(--primary);
+}
+
+/* Fix the Submit Button */
+.primary-btn {
+    background: #4f46e5;
+    color: white;
+    padding: 14px 24px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+}
+
+.primary-btn:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+
+.primary-btn:active {
+    transform: translateY(0);
+}

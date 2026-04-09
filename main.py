@@ -1,119 +1,121 @@
 import os
-from mcp.server.fastmcp import FastMCP
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
+import shutil
+from pathlib import Path
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, UploadFile, File, Form
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
-# Import the corrected logic from your other files
-from tools import DocumentParser, EmailAssetScanner, FormFiller, RequirementEngine, SubscriptionManager, LogisticsManager
-from agent import context, AssetInfo, TaskInfo
+# AI SDK
+import anthropic
 
-# 1. Initialize FastMCP
-mcp = FastMCP("GriefOS-Live")
+# Internal Logic
+from agent import context, setup_identity, live_gmail_scan
 
-# 2. Initialize Internal Tools
-parser, scanner, filler = DocumentParser(), EmailAssetScanner(), FormFiller()
-engine, sub_manager, logistics = RequirementEngine(), SubscriptionManager(), LogisticsManager()
+# Ensure .env is loaded at the very start
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
 
-# 3. Gmail OAuth Setup
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+app = FastAPI()
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+UPLOAD_FOLDER = BASE_DIR / "uploads"
+UPLOAD_FOLDER.mkdir(exist_ok=True)
 
-def get_gmail_service():
-    """Handles secure OAuth2 login. Requires credentials.json."""
-    flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-    creds = flow.run_local_server(port=0)
-    return build('gmail', 'v1', credentials=creds)
-
-# --- MCP TOOLS ---
-
-@mcp.tool()
-def setup_identity(path: str) -> str:
+def get_llm_decision(prompt: str):
     """
-    Step 1: Ingests the Death Certificate.
-    Cleans the path and sets the global identity context.
+    Handles communication with Claude 3.5 Sonnet.
     """
-    # Defensive cleaning for Windows paths
-    clean_path = path.strip().replace('"', '').replace("'", "")
+    # 1. Fetch Key inside function to prevent initialization errors
+    api_key = os.getenv("CLAUDE_KEY")
     
-    if not os.path.exists(clean_path):
-        return f"❌ File not found at: {clean_path}"
+    if not api_key:
+        print("❌ CRITICAL ERROR: 'CLAUDE_KEY' is missing from .env file!")
+        return "ERROR_NO_KEY"
 
+    # 2. Define the System Prompt
+    sys_msg = f"""
+    You are GriefOS, an AI executor for bereavement tasks. 
+    Current Deceased: {context.identity.deceased_name if context.identity else 'None'}
+    
+    INSTRUCTIONS:
+    - If user wants to find bank accounts, assets, or scan emails: reply ONLY 'TRIGGER_SCAN'.
+    - If user mentions the uploaded file or identity details: reply ONLY 'TRIGGER_PARSE'.
+    - Otherwise: provide a supportive, 1-sentence response.
+    """
+    
     try:
-        identity_data = parser.parse_file(clean_path)
-        context.set_identity(identity_data)
-        return f"✅ Identity Verified: Supporting the family of {identity_data.deceased_name}."
+        # 3. Initialize Client and Request
+        client = anthropic.Anthropic(api_key=api_key)
+        
+        message = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=100,
+            system=sys_msg,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return message.content[0].text.upper()
     except Exception as e:
-        return f"❌ Error: {str(e)}"
+        print(f"❌ Claude API Error: {e}")
+        return "ERROR_FETCHING_DECISION"
 
-@mcp.tool()
-def live_gmail_scan() -> str:
-    """
-    Step 2: Scans live Gmail for financial assets and subscriptions.
-    Automatically populates the bereavement roadmap.
-    """
-    try:
-        service = get_gmail_service()
-        query = "HDFC OR LIC OR EPFO OR Netflix OR Spotify OR Amazon"
-        
-        results = service.users().messages().list(userId='me', q=query, maxResults=15).execute()
-        messages = results.get('messages', [])
-        
-        if not messages:
-            return "🔍 Scan finished. No relevant financial footprints found."
+# --- UI ROUTES ---
 
-        found_assets = 0
-        detected_subs = []
+@app.get("/")
+async def dashboard(request: Request):
+    return templates.TemplateResponse(request=request, name="dashboard.html", context={
+        "identity_uploaded": context.identity is not None, 
+        "identity_data": context.identity,
+        "deceased_name": context.identity.deceased_name if context.identity else None,
+        "assets": context.assets, 
+        "tasks": context.tasks
+    })
 
-        for msg in messages:
-            m = service.users().messages().get(userId='me', id=msg['id'], format='minimal').execute()
-            text = m.get('snippet', '')
+@app.get("/identity")
+async def identity_page(request: Request):
+    return templates.TemplateResponse(request=request, name="identity.html", context={
+        "identity_data": context.identity,
+        "identity_uploaded": context.identity is not None
+    })
+
+@app.get("/assets")
+async def assets_page(request: Request):
+    return templates.TemplateResponse(request=request, name="assets.html", context={"assets": context.assets})
+
+@app.get("/tasks")
+async def tasks_page(request: Request):
+    return templates.TemplateResponse(request=request, name="tasks.html", context={"tasks": context.tasks})
+
+# --- ACTION ROUTES ---
+
+@app.post("/agent-execute")
+async def agent_execute(user_input: str = Form(...)):
+    # Get AI decision
+    decision = get_llm_decision(user_input)
+    print(f"🤖 Claude Decision: {decision}")
+    
+    # Tool Execution Logic
+    if "TRIGGER_SCAN" in decision: 
+        print("🚀 Executing Gmail Scan...")
+        live_gmail_scan()
+    elif "TRIGGER_PARSE" in decision:
+        print("🚀 Executing Document Parse...")
+        files = list(UPLOAD_FOLDER.glob("*"))
+        if files:
+            setup_identity(str(files[-1]))
             
-            # Find Banks/Insurance
-            for a in scanner.scan_text(text):
-                context.add_asset(AssetInfo(asset_type=a['type'], institution=a['institution'], account_number=a['id']))
-                found_assets += 1
-            
-            # Find Subs
-            detected_subs.extend(sub_manager.scan_for_subscriptions(text))
+    return RedirectResponse(url="/", status_code=303)
 
-        # Core Task: Must collect the physical certificate first
-        context.tasks = [TaskInfo(task_id="collect_dc", title="Collect Death Certificate")]
-        
-        # Build the roadmap
-        context.auto_populate_requirements(engine, list(set(detected_subs)))
-        
-        return f"🔍 Scan Complete: Found {found_assets} assets and {len(set(detected_subs))} subscriptions."
-    except Exception as e:
-        return f"❌ Gmail Error: {str(e)}"
+@app.post("/upload-identity")
+async def handle_upload(file: UploadFile = File(...)):
+    path = UPLOAD_FOLDER / file.filename
+    with open(path, "wb") as f: 
+        shutil.copyfileobj(file.file, f)
+    setup_identity(str(path))
+    return RedirectResponse(url="/", status_code=303)
 
-@mcp.tool()
-def generate_bereavement_package() -> str:
-    if not context.identity:
-        return "❌ Error: Identity not set. Run setup_identity first."
-
-    # Mark root task complete to unlock bank claims
-    context.update_task("collect_dc", "completed")
-    
-    # Separate tasks for better presentation
-    legal_claims = [t for t in context.tasks if "claim" in t.task_id]
-    subscriptions = [t for t in context.tasks if "cancel" in t.task_id]
-    
-    # Generate files for legal claims
-    for task in legal_claims:
-        if task.required_docs:
-            filler.generate_checklist(task.title, task.required_docs)
-            
-    # Build the final output string for the Inspector
-    report = [f"📄 Success: Generated {len(legal_claims)} legal checklists in /outputs.\n"]
-    
-    if subscriptions:
-        report.append("🚫 SUBSCRIPTIONS DETECTED (Action Required):")
-        for s in subscriptions:
-            report.append(f"- {s.title} (Status: Ready to cancel)")
-    
-    summary = logistics.calculate_photocopy_needs(context.tasks)
-    report.append(f"\n{summary}")
-    
-    return "\n".join(report)
-
-if __name__ == "__main__":
-    mcp.run()
+@app.post("/run-scan")
+async def handle_manual_scan():
+    live_gmail_scan()
+    return RedirectResponse(url="/", status_code=303)

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+    <h1>System Dashboard</h1>
+    {% if not identity_uploaded %}
+        <div class="alert warning">
+            <p><strong>Action Required:</strong> Upload identity documents.</p>
+            <a href="/identity" class="btn">Go to Identity</a>
+        </div>
+    {% else %}
+        <div class="alert success">
+            <p>Identity Verified for: <strong>{{ deceased_name }}</strong></p>
+            <div style="margin: 10px 0; font-size: 0.9rem; display: flex; gap: 20px; color: #166534;">
+                <span><strong>DOD:</strong> {{ identity_data.date_of_death }}</span>
+                <span><strong>Reg No:</strong> {{ identity_data.registration_number }}</span>
+                <span><strong>Aadhaar:</strong> {{ identity_data.aadhaar_number }}</span>
+            </div>
+        </div>
+    {% endif %}
+</section>
+
+<section class="card" style="border: 2px solid #4f46e5; background: #f8fafc;">
+    <h2>🤖 MCP Agent Console</h2>
+    <form action="/agent-execute" method="post" style="display: flex; gap: 10px;">
+        <input type="text" name="user_input" placeholder="e.g. 'Scan my mail for banks'" style="flex-grow: 1; padding: 12px; border-radius: 8px;">
+        <button type="submit" class="btn">Execute Agent</button>
+    </form>
+</section>
+
+<div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <section class="card">
+        <h2>Recent Assets</h2>
+        <ul class="list">
+            {% for asset in assets %}
+                <li><strong>{{ asset.institution }}</strong> <span class="badge">{{ asset.asset_type }}</span></li>
+            {% else %}<li>No assets found.</li>{% endfor %}
+        </ul>
+    </section>
+    <section class="card">
+        <h2>Active Tasks</h2>
+        <ul class="list">
+            {% for task in tasks %}
+                <li><span>{{ task.title }}</span> <span class="badge">{{ task.status }}</span></li>
+            {% else %}<li>No tasks.</li>{% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

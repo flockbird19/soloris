@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h1>Upload Identity</h1>
+    <p class="muted">Upload the Death Certificate file to allow the agent to scan your accounts.</p>
+    
+    <form action="/upload-identity" method="post" enctype="multipart/form-data" class="upload-container">
+        <div class="file-wrapper">
+            <input type="file" name="file" id="file" class="file-input" required>
+        </div>
+        <button type="submit" class="btn primary-btn">Upload & Verify</button>
+    </form>
+</section>
+{% endblock %}

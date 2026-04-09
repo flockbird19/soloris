@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+    <h1>Tasks</h1>
+    <ul class="list">
+    {% for task in tasks %}
+        <li class="list-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+            <span>{{ task.title }}</span>
+            <span class="badge">{{ task.status }}</span>
+        </li>
+    {% else %}
+        <p class="muted">Your task list is currently empty.</p>
+    {% endfor %}
+    </ul>
+</section>
+{% endblock %}

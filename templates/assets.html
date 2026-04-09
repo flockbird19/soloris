@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+    <h1>All Discovered Assets</h1>
+    <ul class="list">
+    {% for asset in assets %}
+        <li class="list-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+            <strong>{{ asset.institution }}</strong>
+            <span class="badge">{{ asset.asset_type }}</span>
+        </li>
+    {% else %}
+        <p class="muted">No assets found. Try running a scan from the dashboard.</p>
+    {% endfor %}
+    </ul>
+</section>
+{% endblock %}
