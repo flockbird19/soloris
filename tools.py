@@ -8,6 +8,7 @@ from PyPDF2 import PdfReader
 from pdf2image import convert_from_path
 from pydantic import BaseModel
 from typing import Optional, List, Dict
+from fpdf import FPDF
 
 # Ensure Tesseract uses an absolute path
 pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract.exe'
@@ -52,20 +53,15 @@ class DocumentParser:
             return ""
 
     def _extract_structured_data(self, text: str) -> DeathCertificateData:
-        # NAME: Captures name but stops at next major label
         name_pattern = r"(?:Name|Deceased Name)(?:\s+of\s+Deceased)?[:\s]+(.*?)(?=\s+(?:Date|Death|DOD|Reg|Place|Sex|Father|Mother|Aadhaar)|$)"
         name_match = re.search(name_pattern, text, re.I | re.DOTALL)
         raw_name = name_match.group(1).strip() if name_match else "Unknown Deceased"
         clean_name = re.sub(r"^(of\s+deceased|deceased|:)\s+", "", raw_name, flags=re.I).strip()
 
-        # DOD: Multiline tolerant
         dod_match = re.search(r"(?:Date|Death|DOD)[:\s\n]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})", text, re.I)
-
-        # REGISTRATION
         reg_match = re.search(r"(?:Registration|Reg|Certificate)\s*No\.?[:\s\n]+([A-Z0-9\s/-]+)", text, re.I)
         reg_val = reg_match.group(1).strip().replace("\n", " ") if reg_match else "Unknown Reg"
 
-        # AADHAAR
         aadhaar_match = re.search(r"(?:Aadhaar|UID|ID)[:\s\n]+(\d{4}\s?\d{4}\s?\d{4})", text, re.I)
         aadhaar_val = aadhaar_match.group(1).strip() if aadhaar_match else "Not Found"
 
@@ -80,10 +76,11 @@ class DocumentParser:
 class EmailAssetScanner:
     def __init__(self):
         self.patterns = {
-            "banking": (r"(HDFC|SBI|ICICI|AXIS|KOTAK|Standard Chartered)", "Bank"),
+            "banking": (r"(HDFC|SBI|ICICI|AXIS|KOTAK|Standard Chartered|Loan)", "Bank"),
             "insurance": (r"(LIC|HDFC Life|Max Life|Tata AIA|ICICI Pru)", "Insurance"),
-            "investment": (r"(EPFO|Zerodha|Groww|Upstox|Mutual Fund)", "Investment"),
-            "tax": (r"([A-Z]{5}[0-9]{4}[A-Z]{1})", "Income Tax (PAN)")
+            "investment": (r"(EPFO|Zerodha|Groww|Upstox|Mutual Fund|SIP)", "Investment"),
+            "tax": (r"([A-Z]{5}[0-9]{4}[A-Z]{1})", "Income Tax (PAN)"),
+            "utilities": (r"(Airtel|BESCOM|BSES|Jio|Vi)", "Utility") 
         }
 
     def decode_gmail_body(self, payload: Dict) -> str:
@@ -117,6 +114,7 @@ class SubscriptionManager:
             "Amazon Prime": ["amazon", "prime"], "Gym Membership": ["gym", "fitness"],
             "Adobe": ["adobe", "creative cloud"]
         }
+        
     def scan_for_subscriptions(self, text: str) -> List[str]:
         detected = []
         for service, keywords in self.services.items():
@@ -127,10 +125,12 @@ class SubscriptionManager:
 class RequirementEngine:
     def __init__(self):
         self.registry = {
-            "banking": ["Original Death Certificate", "Claimant KYC", "Succession Certificate", "Bank Passbook"],
-            "insurance": ["Original Policy Bond", "Certified Death Cert", "Discharge Form"],
-            "investment": ["UAN Number", "Form 20", "Nominee ID"],
-            "tax": ["PAN Card Copy", "Legal Heir Certificate"]
+            "banking": ["Form 15H", "Annexure A (Claim Form)", "Death Certificate", "Succession Cert"],
+            "insurance": ["Form 3783", "Original Policy", "NEFT Mandate"],
+            "investment": ["EPF Form 20", "Form 10D", "Nominee ID"],
+            "tax": ["ITR-V", "Legal Heir Certificate"],
+            "utilities": ["Death Certificate", "Current Utility Bill", "Identity Proof of Legal Heir"],
+            "municipal": ["Death Certificate", "Property Tax Receipt", "Legal Heir Certificate"]
         }
     def get_docs(self, asset_type: str) -> List[str]:
         return self.registry.get(asset_type.lower(), ["Death Certificate", "Claimant ID Proof"])
@@ -139,16 +139,83 @@ class FormFiller:
     def __init__(self, output_dir: Optional[str] = None):
         self.output_dir = Path(output_dir).resolve() if output_dir else Path(__file__).resolve().parent / "outputs"
         os.makedirs(self.output_dir, exist_ok=True)
-    def generate_checklist(self, task_name: str, documents: List[str]) -> str:
-        content = f"📋 BEREAVEMENT CHECKLIST: {task_name}\n" + "="*40 + "\n"
-        content += "\n".join([f"[ ] {d}" for d in documents])
-        file_path = self.output_dir / f"Checklist_{task_name.replace(' ', '_')}.txt"
-        with open(file_path, "w", encoding="utf-8") as f: f.write(content)
-        return str(file_path)
 
-class LogisticsManager:
-    def calculate_photocopy_needs(self, tasks: List) -> str:
-        pending = [t for t in tasks if getattr(t, 'status', '') != "completed"]
-        copies = len(pending) * 2
-        return (f"📋 LOGISTICS SUMMARY\n--------------------------\n"
-                f"Pending Tasks: {len(pending)}\nRecommended Copies: {copies}")
+    def prepare_fill_data(self, identity: DeathCertificateData, task_title: str):
+        return {
+            "Form Name": f"Claim Request: {task_title}",
+            "Field_1 (Deceased Name)": identity.deceased_name,
+            "Field_2 (Date of Death)": identity.date_of_death,
+            "Field_3 (ID Reference)": identity.aadhaar_number,
+            "Field_4 (Reg No)": identity.registration_number,
+            "Timestamp": "2026-04-09",
+            "Status": "READY_FOR_SUBMISSION"
+        }
+
+    def prepare_letter_data(self, identity: DeathCertificateData, task_title: str):
+        """
+        Generates a formal request letter for utility transfers.
+        """
+        return {
+            "Document Type": "Formal Request Letter",
+            "Recipient": "The Station Manager / Relationship Manager",
+            "Subject": f"Transfer of ownership for {task_title}",
+            "Reference": f"Deceased: {identity.deceased_name} (Reg No: {identity.registration_number})",
+            "Body": (f"I am writing to formally request the transfer of the account/connection associated with "
+                     f"{identity.deceased_name}, who passed away on {identity.date_of_death}. "
+                     f"I have attached the necessary Death Certificate for your verification. "
+                     f"Please guide me on the subsequent steps to move this connection to my name."),
+            "Attachments": "1. Death Certificate (Attested Copy), 2. Identity Proof of Claimant, 3. Last Paid Bill"
+        }
+
+    def generate_filled_pdf(self, form_data: Dict):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("helvetica", "B", 16)
+        pdf.cell(0, 10, txt=form_data["Form Name"], ln=True, align='C')
+        pdf.ln(10)
+        
+        pdf.set_font("helvetica", "", 12)
+        for key, value in form_data.items():
+            if key != "Form Name":
+                pdf.set_font("helvetica", "B", 10)
+                pdf.cell(0, 10, txt=f"{key}:", ln=True)
+                pdf.set_font("helvetica", "", 12)
+                pdf.cell(0, 10, txt=str(value), ln=True)
+                pdf.ln(2)
+        
+        file_name = f"Filled_{form_data['Form Name'].replace(' ', '_')}.pdf"
+        file_path = Path("static/downloads") / file_name
+        pdf.output(str(file_path))
+        return f"/static/downloads/{file_name}"
+
+class PDFGenerator:
+    def __init__(self, output_dir="static/downloads"):
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    def create_checklist_pdf(self, deceased_name, tasks):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("helvetica", "B", 16)
+        pdf.cell(0, 10, f"Bereavement Action Plan: {deceased_name}", ln=True, align="C")
+        pdf.ln(10)
+        
+        pdf.set_font("helvetica", "B", 12)
+        pdf.cell(100, 10, "Task Description", 1, 0, "C")
+        pdf.cell(90, 10, "Required Documents", 1, 1, "C")
+        
+        pdf.set_font("helvetica", "", 10)
+        for task in tasks:
+            title = getattr(task, 'title', task.get('title', 'N/A') if isinstance(task, dict) else 'N/A')
+            docs = getattr(task, 'required_docs', task.get('required_docs', []) if isinstance(task, dict) else [])
+            
+            x, y = pdf.get_x(), pdf.get_y()
+            pdf.multi_cell(100, 10, title, border=1)
+            pdf.set_xy(x + 100, y)
+            docs_text = ", ".join(docs) if docs else "N/A"
+            pdf.multi_cell(90, 10, docs_text, border=1)
+            
+        file_name = f"Checklist_{deceased_name.replace(' ', '_')}.pdf"
+        file_path = self.output_dir / file_name
+        pdf.output(str(file_path))
+        return f"/static/downloads/{file_name}"

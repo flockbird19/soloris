@@ -1,48 +1,108 @@
 {% extends "base.html" %}
+
 {% block content %}
 <section class="card">
-    <h1>System Dashboard</h1>
-    {% if not identity_uploaded %}
-        <div class="alert warning">
-            <p><strong>Action Required:</strong> Upload identity documents.</p>
-            <a href="/identity" class="btn">Go to Identity</a>
-        </div>
-    {% else %}
-        <div class="alert success">
-            <p>Identity Verified for: <strong>{{ deceased_name }}</strong></p>
-            <div style="margin: 10px 0; font-size: 0.9rem; display: flex; gap: 20px; color: #166534;">
-                <span><strong>DOD:</strong> {{ identity_data.date_of_death }}</span>
-                <span><strong>Reg No:</strong> {{ identity_data.registration_number }}</span>
-                <span><strong>Aadhaar:</strong> {{ identity_data.aadhaar_number }}</span>
-            </div>
-        </div>
-    {% endif %}
-</section>
-
-<section class="card" style="border: 2px solid #4f46e5; background: #f8fafc;">
-    <h2>🤖 MCP Agent Console</h2>
-    <form action="/agent-execute" method="post" style="display: flex; gap: 10px;">
-        <input type="text" name="user_input" placeholder="e.g. 'Scan my mail for banks'" style="flex-grow: 1; padding: 12px; border-radius: 8px;">
-        <button type="submit" class="btn">Execute Agent</button>
+    <h2 class="logo" style="margin-bottom: 8px;">Agent Console</h2>
+    <p class="muted">AI-powered command center. Try scanning emails for financial footprints or generating a legal checklist.</p>
+    
+    <form action="/agent-execute" method="post" class="upload-container" style="flex-direction: row; max-width: 100%;">
+        <input type="text" name="user_input" placeholder="e.g. 'Scan my mail'..." class="file-input" style="flex: 1;" required>
+        <button type="submit" class="primary-btn">Execute</button>
     </form>
 </section>
 
-<div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+<div style="display: grid; grid-template-columns: 350px 1fr; gap: 32px;">
+    
+    <div style="display: flex; flex-direction: column; gap: 32px;">
+        <section class="card">
+            <h3>Identity Status</h3>
+            {% if identity_uploaded %}
+                <div class="alert">
+                    <strong>{{ deceased_name }}</strong>
+                </div>
+                <p class="muted">DOD: {{ identity_data.date_of_death }}</p>
+            {% else %}
+                <p class="muted">No identity data loaded.</p>
+                <form action="/upload-identity" method="post" enctype="multipart/form-data" class="upload-container">
+                    <input type="file" name="file" class="file-input">
+                    <button type="submit" class="primary-btn">Upload</button>
+                </form>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Financial Footprint</h3>
+                <form action="/run-scan" method="post">
+                    <button type="submit" class="muted" style="background:none; border:none; cursor:pointer; text-decoration:underline;">Run Scan</button>
+                </form>
+            </div>
+            <ul style="list-style: none; padding: 0;">
+                {% for asset in assets %}
+                    <li class="list-item">
+                        <span>{{ asset.institution }}</span>
+                        <span class="badge">{{ asset.type }}</span>
+                    </li>
+                {% else %}
+                    <p class="muted">No assets detected yet.</p>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+
     <section class="card">
-        <h2>Recent Assets</h2>
-        <ul class="list">
-            {% for asset in assets %}
-                <li><strong>{{ asset.institution }}</strong> <span class="badge">{{ asset.asset_type }}</span></li>
-            {% else %}<li>No assets found.</li>{% endfor %}
-        </ul>
-    </section>
-    <section class="card">
-        <h2>Active Tasks</h2>
-        <ul class="list">
-            {% for task in tasks %}
-                <li><span>{{ task.title }}</span> <span class="badge">{{ task.status }}</span></li>
-            {% else %}<li>No tasks.</li>{% endfor %}
-        </ul>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2>Execution Tasks</h2>
+            {% if tasks %}
+                <a href="/download-checklist" class="primary-btn" style="text-decoration: none; font-size: 0.8rem;">Download Plan</a>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+    {% for task in tasks %}
+        <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0;">
+            <div style="flex: 1;">
+                <div style="font-weight: 700; font-size: 1rem; color: var(--primary);">{{ task.title }}</div>
+                <div class="muted" style="font-size: 0.8rem; margin-top: 4px;">
+                    Required: {{ task.required_docs | join(', ') }}
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <a href="/fill-form/{{ loop.index0 }}/" class="muted" style="text-decoration: underline; font-size: 0.8rem; font-weight: 600;">
+                    PREVIEW FORM
+                </a>
+                
+                <span class="badge">{{ task.status }}</span>
+            </div>
+        </div>
+        <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0;">
+    <div style="flex: 1;">
+        <div style="font-weight: 700;">{{ task.title }}</div>
+        
+        {% if 'Spotify' in task.title or 'Netflix' in task.title or 'Bill' in task.title %}
+            <div style="margin-top: 8px;">
+                <a href="/utility-letter/{{ loop.index0 }}/" 
+                   style="background: #000; color: #fff; padding: 4px 8px; font-size: 0.65rem; text-decoration: none; font-weight: 800;">
+                   ⚡ QUICK ASSIST: GENERATE LETTER
+                </a>
+            </div>
+        {% else %}
+            <div class="muted">Required: {{ task.required_docs | join(', ') }}</div>
+        {% endif %}
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 24px;">
+        <a href="/fill-form/{{ loop.index0 }}/" class="muted" style="text-decoration: underline; font-size: 0.75rem;">PREVIEW FORM</a>
+        <span class="badge">{{ task.status }}</span>
+    </div>
+</div>
+    {% else %}
+        <div style="text-align: center; padding: 60px; border: 1px dashed var(--border);">
+            <p class="muted">No tasks found. Trigger a scan to begin.</p>
+        </div>
+    {% endfor %}
+</div>
     </section>
 </div>
 {% endblock %}

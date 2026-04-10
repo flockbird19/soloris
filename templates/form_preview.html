@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GriefOS | Form Preview</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body style="background: #ffffff; padding: 60px; font-family: 'Inter', sans-serif; color: #000000;">
+    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #000000; padding: 48px;">
+        <h2 style="text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 2px solid #000000; padding-bottom: 16px; margin-bottom: 32px;">
+            {{ form['Form Name'] }}
+        </h2>
+        
+        {% for key, value in form.items() %}
+            {% if key != 'Form Name' %}
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 8px;">{{ key }}</label>
+                <div style="border: 1px solid #e5e5e5; padding: 12px; font-size: 0.95rem;">{{ value }}</div>
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <div style="margin-top: 48px; display: flex; gap: 16px;">
+            <button onclick="window.print()" class="primary-btn" style="flex: 1;">Print & Sign</button>
+            <a href="/" class="muted" style="flex: 1; text-align: center; border: 1px solid #e5e5e5; padding: 14px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">Back</a>
+        </div>
+    </div>
+</body>
+</html>
