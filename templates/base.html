@@ -11,12 +11,23 @@
 
     <div class="sidebar">
         <div class="logo">GriefOS</div>
+        <div style="font-size: 0.75rem; color: #10B981; margin-bottom: 2rem;">🔒 Private & Secure Session</div>
         <nav>
             <a href="/" class="nav-item">Dashboard</a>
             <a href="/identity" class="nav-item">Identity</a>
             <a href="/assets" class="nav-item">Assets</a>
             <a href="/tasks" class="nav-item">Tasks</a>
         </nav>
+        <div style="position: absolute; bottom: 80px; width: calc(100% - 48px);">
+            <a href="/export-session" class="primary-btn" style="display: block; text-align: center; margin-bottom: 12px; padding: 10px; font-size: 0.7rem; background: #10B981; border: none; text-decoration: none;">⬇️ Save Progress</a>
+            <form action="/import-session" method="post" enctype="multipart/form-data" id="import-form">
+                <label for="import-file" class="primary-btn" style="display: block; text-align: center; padding: 10px; font-size: 0.7rem; background: var(--bg-main); color: var(--primary); border: 1px dashed var(--border); cursor: pointer;">⬆️ Restore Session</label>
+                <input type="file" id="import-file" name="file" style="display: none;" accept=".json" onchange="document.getElementById('import-form').submit();">
+            </form>
+        </div>
+        <div style="position: absolute; bottom: 20px;">
+            <a href="/privacy" class="nav-item" style="font-size: 0.8rem; color: #9CA3AF; padding: 0.5rem 0;">Privacy & Security</a>
+        </div>
     </div>
 
     <div class="main">

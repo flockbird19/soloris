@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card privacy-card">
+    <h2 class="logo card-logo">🔒 Privacy & Security</h2>
+    <p class="muted">Your data belongs to you. Here is exactly how we handle it.</p>
+    
+    <div style="margin-top: 2rem;">
+        <h3>1. What Data We Collect</h3>
+        <p>When you upload a Death Certificate, we extract basic details (Name, Date of Death, Registration Number) to auto-fill your claim forms.</p>
+        <p>When you connect Gmail, we <strong>only</strong> scan emails from trusted financial domains (like banks and insurance companies) to discover accounts.</p>
+        
+        <h3 style="margin-top: 1.5rem;">2. How Your Data is Protected</h3>
+        <p>Your session is completely isolated. We use secure browser sessions to ensure your data is never mixed with anyone else's.</p>
+        
+        <h3 style="margin-top: 1.5rem;">3. When Data is Deleted</h3>
+        <p>We do not store your data long-term. All data extracted during this session is instantly wiped from our memory the moment you close your browser or your session expires.</p>
+    </div>
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="/" class="primary-btn" style="text-decoration: none; display: inline-block;">Return to Dashboard</a>
+    </div>
+</section>
+{% endblock %}

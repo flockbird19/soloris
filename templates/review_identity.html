@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2 class="logo card-logo">Review Extracted Data</h2>
+    <p class="muted" style="margin-bottom: 2rem;">We used AI OCR to extract text from your document. Please verify and correct any mistakes before saving.</p>
+    
+    <form action="/confirm-identity" method="post" style="max-width: 500px;">
+        <div class="print-field">
+            <label class="print-label">Deceased Name</label>
+            <input type="text" name="deceased_name" value="{{ identity_data.deceased_name }}" class="file-input" required>
+        </div>
+        
+        <div class="print-field">
+            <label class="print-label">Date of Death</label>
+            <input type="text" name="date_of_death" value="{{ identity_data.date_of_death }}" class="file-input" required>
+        </div>
+        
+        <div class="print-field">
+            <label class="print-label">Registration Number</label>
+            <input type="text" name="registration_number" value="{{ identity_data.registration_number }}" class="file-input" required>
+        </div>
+        
+        <div class="print-field">
+            <label class="print-label">Aadhaar (Optional)</label>
+            <input type="text" name="aadhaar_number" value="{{ identity_data.aadhaar_number }}" class="file-input">
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <button type="submit" class="primary-btn">Confirm & Save</button>
+            <a href="/identity" class="nav-item" style="display: inline-block; margin-left: 20px;">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

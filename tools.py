@@ -1,6 +1,8 @@
 import re
 import os
+import json
 import logging
+import anthropic
 import pytesseract
 import base64
 from pathlib import Path
@@ -57,36 +59,46 @@ class DocumentParser:
             return ""
 
     def _extract_structured_data(self, text: str) -> DeathCertificateData:
-        name_pattern = r"(?:Name|Deceased Name)(?:\s+of\s+Deceased)?[:\s]+(.*?)(?=\s+(?:Date|Death|DOD|Reg|Place|Sex|Father|Mother|Aadhaar)|$)"
-        name_match = re.search(name_pattern, text, re.I | re.DOTALL)
-        raw_name = name_match.group(1).strip() if name_match else "Unknown Deceased"
-        clean_name = re.sub(r"^(of\s+deceased|deceased|:)\s+", "", raw_name, flags=re.I).strip()
+        api_key = os.getenv("CLAUDE_KEY")
+        if not api_key:
+            logging.error("Missing API Key for Identity Parser")
+            return DeathCertificateData(deceased_name="Unknown", date_of_death="Unknown", registration_number="Unknown", raw_text=text)
 
-        dod_match = re.search(r"(?:Date|Death|DOD)[:\s\n]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})", text, re.I)
-        reg_match = re.search(r"(?:Registration|Reg|Certificate)\s*No\.?[:\s\n]+([A-Z0-9\s/-]+)", text, re.I)
-        reg_val = reg_match.group(1).strip().replace("\n", " ") if reg_match else "Unknown Reg"
+        client = anthropic.Anthropic(api_key=api_key)
+        system_prompt = """
+        You are a document data extractor. Given the raw OCR text of a Death Certificate, extract the following fields strictly as a JSON object:
+        - "deceased_name" (Full name of the deceased, title cased)
+        - "date_of_death" (Date of death)
+        - "registration_number" (The official registration or certificate number)
+        - "aadhaar_number" (The 12-digit Aadhaar/UID if present, otherwise "Not Found")
+        
+        Return ONLY valid JSON. Do not include markdown formatting or extra text.
+        """
+        
+        try:
+            message = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=500,
+                system=system_prompt,
+                messages=[{"role": "user", "content": text}]
+            )
+            response_text = message.content[0].text.strip()
+            if response_text.startswith("```json"): response_text = response_text[7:-3]
+            elif response_text.startswith("```"): response_text = response_text[3:-3]
+            
+            data = json.loads(response_text)
+            return DeathCertificateData(
+                deceased_name=data.get("deceased_name", "Unknown"),
+                date_of_death=data.get("date_of_death", "Unknown"),
+                registration_number=data.get("registration_number", "Unknown"),
+                aadhaar_number=data.get("aadhaar_number", "Not Found"),
+                raw_text=text
+            )
+        except Exception as e:
+            logging.error(f"LLM Identity Parsing failed: {e}")
+            return DeathCertificateData(deceased_name="Unknown", date_of_death="Unknown", registration_number="Unknown", raw_text=text)
 
-        aadhaar_match = re.search(r"(?:Aadhaar|UID|ID)[:\s\n]+(\d{4}\s?\d{4}\s?\d{4})", text, re.I)
-        aadhaar_val = aadhaar_match.group(1).strip() if aadhaar_match else "Not Found"
-
-        return DeathCertificateData(
-            deceased_name=clean_name.title(),
-            date_of_death=dod_match.group(1) if dod_match else "Unknown Date",
-            registration_number=reg_val,
-            aadhaar_number=aadhaar_val,
-            raw_text=text
-        )
-
-class EmailAssetScanner:
-    def __init__(self):
-        self.patterns = {
-            "banking": (r"(HDFC|SBI|ICICI|AXIS|KOTAK|Standard Chartered|Loan)", "Bank"),
-            "insurance": (r"(LIC|HDFC Life|Max Life|Tata AIA|ICICI Pru)", "Insurance"),
-            "investment": (r"(EPFO|Zerodha|Groww|Upstox|Mutual Fund|SIP)", "Investment"),
-            "tax": (r"([A-Z]{5}[0-9]{4}[A-Z]{1})", "Income Tax (PAN)"),
-            "utilities": (r"(Airtel|BESCOM|BSES|Jio|Vi)", "Utility") 
-        }
-
+class LLMAssetScanner:
     def decode_gmail_body(self, payload: Dict) -> str:
         if 'parts' in payload:
             for part in payload['parts']:
@@ -98,33 +110,43 @@ class EmailAssetScanner:
                 return base64.urlsafe_b64decode(data).decode('utf-8', errors='ignore')
         return ""
 
-    def scan_text(self, text: str) -> List[Dict]:
-        found = []
-        for category, (regex, label) in self.patterns.items():
-            match = re.search(regex, text, re.I)
-            if match:
-                institution_name = match.group(0).upper()
-                found.append({
-                    "type": category,
-                    "institution": institution_name if category != "tax" else label,
-                    "id": match.group(0) if category == "tax" else "Verified in Content"
-                })
-        return found
+    def extract_assets(self, email_snippets: List[str]) -> List[Dict]:
+        api_key = os.getenv("CLAUDE_KEY")
+        if not api_key or not email_snippets:
+            return []
 
-class SubscriptionManager:
-    def __init__(self):
-        self.services = {
-            "Netflix": ["netflix"], "Spotify": ["spotify"], 
-            "Amazon Prime": ["amazon", "prime"], "Gym Membership": ["gym", "fitness"],
-            "Adobe": ["adobe", "creative cloud"]
-        }
+        client = anthropic.Anthropic(api_key=api_key)
         
-    def scan_for_subscriptions(self, text: str) -> List[str]:
-        detected = []
-        for service, keywords in self.services.items():
-            if any(k.lower() in text.lower() for k in keywords):
-                detected.append(service)
-        return list(set(detected))
+        system_prompt = """
+        You are a financial asset extractor. Extract actual financial assets (bank accounts, insurance policies, investments) and digital subscriptions (like Netflix, Spotify, Amazon Prime, etc.) from the provided email snippets. 
+        Ignore promotional emails or general newsletters. 
+        Return ONLY a strict JSON array of objects with keys:
+        - "type" (one of: banking, insurance, investment, tax, utilities, subscription)
+        - "institution" (e.g. HDFC Bank, LIC, Netflix, Spotify)
+        - "id" (the account number, last 4 digits, or policy number if found, else "Unknown")
+        If no assets or subscriptions are found, return []. Do not include markdown formatting or any other text.
+        """
+        
+        combined_text = "\n\n---EMAIL---\n\n".join(email_snippets)
+        
+        try:
+            message = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=1000,
+                system=system_prompt,
+                messages=[{"role": "user", "content": combined_text}]
+            )
+            response_text = message.content[0].text.strip()
+            
+            if response_text.startswith("```json"):
+                response_text = response_text[7:-3]
+            elif response_text.startswith("```"):
+                response_text = response_text[3:-3]
+                
+            return json.loads(response_text)
+        except Exception as e:
+            logging.error(f"LLM Extraction failed: {e}")
+            return []
 
 class RequirementEngine:
     def __init__(self):
@@ -175,19 +197,31 @@ class FormFiller:
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("helvetica", "B", 16)
-        pdf.cell(0, 10, txt=form_data["Form Name"], ln=True, align='C')
+        pdf.cell(0, 10, txt="UNIVERSAL BEREAVEMENT CLAIM FORM", ln=True, align='C')
+        pdf.set_font("helvetica", "I", 10)
+        pdf.cell(0, 10, txt=form_data.get("Form Name", "Claim Request"), ln=True, align='C')
         pdf.ln(10)
         
         pdf.set_font("helvetica", "", 12)
         for key, value in form_data.items():
             if key != "Form Name":
                 pdf.set_font("helvetica", "B", 10)
-                pdf.cell(0, 10, txt=f"{key}:", ln=True)
-                pdf.set_font("helvetica", "", 12)
-                pdf.cell(0, 10, txt=str(value), ln=True)
+                pdf.cell(60, 10, txt=f"{key}:", border=1)
+                pdf.set_font("helvetica", "", 10)
+                pdf.cell(0, 10, txt=str(value), border=1, ln=True)
                 pdf.ln(2)
         
-        safe_form_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', form_data['Form Name'])
+        pdf.ln(20)
+        pdf.set_font("helvetica", "B", 10)
+        pdf.cell(90, 10, txt="Claimant Signature: _______________________", ln=False)
+        pdf.cell(0, 10, txt="Date: _______________________", ln=True)
+        
+        # Legal Disclaimer Footer
+        pdf.set_y(-30)
+        pdf.set_font("helvetica", "I", 8)
+        pdf.multi_cell(0, 5, txt="Disclaimer: This is a guidance tool and auto-generated claim form. It does not constitute legal advice. Please verify all information and consult the respective institution before submission.", align="C")
+        
+        safe_form_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', form_data.get('Form Name', 'Form'))
         file_name = f"Filled_{safe_form_name}.pdf"
         file_path = Path("static/downloads") / file_name
         pdf.output(str(file_path))
@@ -219,6 +253,11 @@ class PDFGenerator:
             pdf.set_xy(x + 100, y)
             docs_text = ", ".join(docs) if docs else "N/A"
             pdf.multi_cell(90, 10, docs_text, border=1)
+            
+        # Legal Disclaimer Footer
+        pdf.set_y(-30)
+        pdf.set_font("helvetica", "I", 8)
+        pdf.multi_cell(0, 5, txt="Disclaimer: This is a guidance tool. It does not constitute legal advice. Please verify all requirements with the respective institution.", align="C")
             
         file_name = f"Checklist_{deceased_name.replace(' ', '_')}.pdf"
         file_path = self.output_dir / file_name

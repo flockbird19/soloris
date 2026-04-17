@@ -2,14 +2,39 @@
 
 {% block content %}
 <section class="card">
-    <h1>Upload Identity</h1>
-    <p class="muted">Upload the Death Certificate file to allow the agent to scan your accounts.</p>
+    <h2 class="logo card-logo">Identity Profile</h2>
     
-    <form action="/upload-identity" method="post" enctype="multipart/form-data" class="upload-container">
-        <div class="file-wrapper">
-            <input type="file" name="file" id="file" class="file-input" required>
+    {% if identity_uploaded %}
+    <div style="background: var(--sidebar-bg); padding: 24px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 2rem;">
+        <p class="muted" style="margin-bottom: 1.5rem;">The following details have been securely extracted and verified.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+                <span class="print-label">Deceased Name</span>
+                <div class="print-value" style="background: white; border-radius: 6px;">{{ identity_data.deceased_name }}</div>
+            </div>
+            <div>
+                <span class="print-label">Date of Death</span>
+                <div class="print-value" style="background: white; border-radius: 6px;">{{ identity_data.date_of_death }}</div>
+            </div>
+            <div>
+                <span class="print-label">Registration Number</span>
+                <div class="print-value" style="background: white; border-radius: 6px;">{{ identity_data.registration_number }}</div>
+            </div>
+            <div>
+                <span class="print-label">Aadhaar Reference</span>
+                <div class="print-value" style="background: white; border-radius: 6px;">{{ identity_data.aadhaar_number }}</div>
+            </div>
         </div>
-        <button type="submit" class="btn primary-btn">Upload & Verify</button>
+        <p style="margin-top: 1.5rem; font-size: 0.8rem; color: #10B981;">🔒 Data is safely stored in your isolated session.</p>
+    </div>
+    {% endif %}
+
+    <h3 style="margin-top: 2rem; margin-bottom: 1rem;">{% if identity_uploaded %}Re-Upload Identity{% else %}Upload Identity{% endif %}</h3>
+    <p class="muted" style="margin-bottom: 1.5rem;">Upload the Death Certificate file to allow the agent to auto-fill forms and verify accounts.</p>
+    
+    <form action="/upload-identity" method="post" enctype="multipart/form-data" class="upload-container" style="display: flex; gap: 16px; align-items: center;">
+        <input type="file" name="file" id="file" class="file-input" style="margin: 0; flex: 1;" required>
+        <button type="submit" class="primary-btn">Upload & Verify</button>
     </form>
 </section>
 {% endblock %}

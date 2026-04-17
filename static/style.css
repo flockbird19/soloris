@@ -67,7 +67,14 @@ body {
     padding: 32px;
     border: 1px solid var(--border);
     margin-bottom: 32px;
-    border-radius: 0; /* Sharp minimal edges */
+    border-radius: 8px; /* Soft minimal edges */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.06);
 }
 
 h2, h3 {
@@ -88,12 +95,15 @@ h2, h3 {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    border-radius: 6px;
 }
 
 .primary-btn:hover {
     background: white;
     color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 /* INPUTS */
@@ -104,6 +114,14 @@ h2, h3 {
     font-family: inherit;
     font-size: 0.9rem;
     margin-bottom: 12px;
+    border-radius: 6px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.file-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
 }
 
 /* BADGES & LISTS */
@@ -123,6 +141,10 @@ h2, h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: background-color 0.2s;
+}
+.list-item:hover {
+    background-color: var(--accent-light);
 }
 
 .muted {

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2 class="logo card-logo">Scan Consent Required</h2>
+    <p class="muted" style="margin-bottom: 2rem;">Before we extract your financial data, please confirm you want to proceed.</p>
+    
+    <div style="background: var(--sidebar-bg); padding: 24px; border: 1px dashed var(--border); border-radius: 6px; margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1rem; color: var(--primary);">Summary</h3>
+        <p>We found <strong>{{ count }}</strong> emails matching known financial institutions (Banks, Insurance, Utilities) in the last 5 years.</p>
+        <p style="margin-top: 1rem; font-size: 0.85rem; color: #10B981;">🔒 Data will only be processed securely and temporarily.</p>
+    </div>
+    
+    <div style="display: flex; gap: 16px;">
+        <form action="/execute-scan" method="post">
+            <button type="submit" class="primary-btn">Confirm & Extract Assets</button>
+        </form>
+        <a href="/" class="primary-btn" style="background: white; color: var(--primary); text-decoration: none; border-color: var(--border);">Cancel</a>
+    </div>
+</section>
+{% endblock %}
