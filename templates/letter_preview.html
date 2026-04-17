@@ -1,47 +1,35 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>GriefOS | Letter Assistant</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body style="background: #ffffff; padding: 80px; font-family: 'Inter', sans-serif;">
-    <div style="max-width: 700px; margin: 0 auto; border: 1px solid #000; padding: 60px; line-height: 1.6;">
-        <div style="text-align: right; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 40px;">
-            Date: 09 April 2026
-        </div>
+{% extends "print_base.html" %}
+{% block title %}GriefOS | Letter Assistant{% endblock %}
 
-        <div style="margin-bottom: 30px;">
-            <strong>To:</strong><br>
-            {{ letter.Recipient }}
-        </div>
+{% block content %}
+<div class="letter-date">Date: 09 April 2026</div>
 
-        <div style="margin-bottom: 30px; font-weight: 800; border-bottom: 1px solid #000; padding-bottom: 8px;">
-            SUB: {{ letter.Subject }}
-        </div>
+<div class="letter-section">
+    <strong>To:</strong><br>
+    {{ letter.Recipient }}
+</div>
 
-        <div style="margin-bottom: 20px;">
-            {{ letter.Reference }}
-        </div>
+<div class="letter-subject">SUB: {{ letter.Subject }}</div>
 
-        <div style="margin-bottom: 40px;">
-            Dear Sir/Madam,<br><br>
-            {{ letter.Body }}
-        </div>
+<div class="letter-section">{{ letter.Reference }}</div>
 
-        <div style="margin-bottom: 40px;">
-            <strong>REQUIRED ATTACHMENTS:</strong><br>
-            <span class="muted">{{ letter.Attachments }}</span>
-        </div>
+<div class="letter-body">
+    Dear Sir/Madam,<br><br>
+    {{ letter.Body }}
+</div>
 
-        <div style="margin-top: 60px;">
-            __________________________<br>
-            (Signature of Claimant)
-        </div>
+<div class="letter-section">
+    <strong>REQUIRED ATTACHMENTS:</strong><br>
+    <span class="muted">{{ letter.Attachments }}</span>
+</div>
 
-        <div style="margin-top: 60px; display: flex; gap: 20px;" class="no-print">
-            <button onclick="window.print()" class="primary-btn" style="flex: 1;">Print Letter</button>
-            <a href="/" class="muted" style="text-decoration: none; border: 1px solid #e5e5e5; padding: 14px; flex: 1; text-align: center;">Done</a>
-        </div>
-    </div>
-</body>
-</html>
+<div class="letter-signature">
+    __________________________<br>
+    (Signature of Claimant)
+</div>
+
+<div class="print-actions no-print">
+    <button onclick="window.print()" class="primary-btn flex-1">Print Letter</button>
+    <a href="/" class="muted back-link">Done</a>
+</div>
+{% endblock %}

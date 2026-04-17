@@ -1,5 +1,6 @@
 import re
 import os
+import logging
 import pytesseract
 import base64
 from pathlib import Path
@@ -10,8 +11,11 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict
 from fpdf import FPDF
 
-# Ensure Tesseract uses an absolute path
-pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract.exe'
+# Configure basic logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Ensure Tesseract uses an absolute path, configurable via environment
+pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_PATH", r'C:/Program Files/Tesseract-OCR/tesseract.exe')
 
 class DeathCertificateData(BaseModel):
     deceased_name: str
@@ -42,14 +46,14 @@ class DocumentParser:
                 text = "".join([pytesseract.image_to_string(img) for img in images])
             return text
         except Exception as e:
-            print(f"Error reading PDF: {e}")
+            logging.error(f"Error reading PDF: {e}")
             return ""
 
     def _extract_from_image(self, path: str) -> str:
         try:
             return pytesseract.image_to_string(Image.open(path))
         except Exception as e:
-            print(f"Error reading Image: {e}")
+            logging.error(f"Error reading Image: {e}")
             return ""
 
     def _extract_structured_data(self, text: str) -> DeathCertificateData:
@@ -183,7 +187,8 @@ class FormFiller:
                 pdf.cell(0, 10, txt=str(value), ln=True)
                 pdf.ln(2)
         
-        file_name = f"Filled_{form_data['Form Name'].replace(' ', '_')}.pdf"
+        safe_form_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', form_data['Form Name'])
+        file_name = f"Filled_{safe_form_name}.pdf"
         file_path = Path("static/downloads") / file_name
         pdf.output(str(file_path))
         return f"/static/downloads/{file_name}"

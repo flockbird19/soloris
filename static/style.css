@@ -130,12 +130,55 @@ h2, h3 {
     font-size: 0.8rem;
     line-height: 1.5;
 }
+
+/* Dashboard Utilities */
+.card-logo { margin-bottom: 8px; }
+.agent-form { flex-direction: row; max-width: 100%; display: flex; }
+.flex-1 { flex: 1; }
+.dashboard-grid { display: grid; grid-template-columns: 350px 1fr; gap: 32px; }
+.dashboard-sidebar-col { display: flex; flex-direction: column; gap: 32px; }
+.flex-between-center { display: flex; justify-content: space-between; align-items: center; }
+.mb-24 { margin-bottom: 24px; }
+.link-btn { background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; font-family: inherit; }
+.clean-list { list-style: none; padding: 0; margin: 0; }
+.small-btn { text-decoration: none; font-size: 0.8rem; display: inline-block; }
+.task-list { display: flex; flex-direction: column; }
+.task-item { padding: 20px 0; }
+.task-info { flex: 1; }
+.task-title { font-weight: 700; color: var(--primary); }
+.task-quick-assist { margin-top: 8px; }
+.quick-assist-btn { background: var(--primary); color: white; padding: 4px 8px; font-size: 0.65rem; text-decoration: none; font-weight: 800; display: inline-block; border-radius: 2px; }
+.task-actions { display: flex; align-items: center; gap: 24px; }
+.preview-link { text-decoration: underline; font-size: 0.75rem; font-weight: 600; }
+.empty-state { text-align: center; padding: 60px; border: 1px dashed var(--border); }
+
+/* Print Document Styles */
+.print-body { background: #ffffff; padding: 60px; color: #000000; }
+.print-container { max-width: 700px; margin: 0 auto; border: 1px solid #000000; padding: 48px; line-height: 1.6; }
+.print-header { text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 2px solid #000000; padding-bottom: 16px; margin-bottom: 32px; font-size: 1.5rem; margin-top: 0; }
+.print-field { margin-bottom: 24px; }
+.print-label { display: block; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; }
+.print-value { border: 1px solid #e5e5e5; padding: 12px; font-size: 0.95rem; }
+.print-actions { margin-top: 48px; display: flex; gap: 16px; }
+.back-link { flex: 1; text-align: center; border: 1px solid #e5e5e5; padding: 14px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+
+.letter-date { text-align: right; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 40px; }
+.letter-section { margin-bottom: 30px; }
+.letter-subject { margin-bottom: 30px; font-weight: 800; border-bottom: 1px solid #000; padding-bottom: 8px; text-transform: uppercase; }
+.letter-body { margin-bottom: 40px; }
+.letter-signature { margin-top: 60px; }
+
 @media print {
     .no-print {
         display: none !important;
     }
     body {
         padding: 0;
+    }
+    .print-container {
+        border: none;
+        padding: 0;
+        max-width: none;
     }
     .card, .main {
         border: none;

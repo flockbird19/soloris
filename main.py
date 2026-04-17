@@ -1,9 +1,10 @@
 import os
 import shutil
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, UploadFile, File, Form
-from fastapi.responses import RedirectResponse, FileResponse # Added FileResponse
+from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -35,7 +36,7 @@ def get_llm_decision(prompt: str):
     api_key = os.getenv("CLAUDE_KEY")
     
     if not api_key:
-        print("❌ CRITICAL ERROR: 'CLAUDE_KEY' is missing from .env file!")
+        logging.error("CRITICAL ERROR: 'CLAUDE_KEY' is missing from .env file!")
         return "ERROR_NO_KEY"
 
     # 2. Define the System Prompt
@@ -63,7 +64,7 @@ def get_llm_decision(prompt: str):
         )
         return message.content[0].text.upper()
     except Exception as e:
-        print(f"❌ Claude API Error: {e}")
+        logging.error(f"Claude API Error: {e}")
         return "ERROR_FETCHING_DECISION"
 
 # --- UI ROUTES ---
@@ -109,11 +110,11 @@ async def preview_form(request: Request, task_id: int):
             }
         )
         
+    except IndexError:
+        raise HTTPException(status_code=404, detail="Task not found")
     except Exception as e:
-        print(f"❌ SYSTEM ERROR: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return RedirectResponse(url="/", status_code=303)
+        logging.error(f"SYSTEM ERROR previewing form: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
     
 @app.get("/utility-letter/{task_id}/")
 async def utility_letter(request: Request, task_id: int):
@@ -133,9 +134,11 @@ async def utility_letter(request: Request, task_id: int):
                 "task": current_task.dict()
             }
         )
+    except IndexError:
+        raise HTTPException(status_code=404, detail="Task not found")
     except Exception as e:
-        print(f"❌ Letter Error: {e}")
-        return RedirectResponse(url="/", status_code=303)
+        logging.error(f"Letter Error: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.get("/identity")
 async def identity_page(request: Request):
@@ -197,19 +200,19 @@ async def download_filled_form(task_id: int):
 async def agent_execute(user_input: str = Form(...)):
     # Get AI decision
     decision = get_llm_decision(user_input)
-    print(f"🤖 Claude Decision: {decision}")
+    logging.info(f"Claude Decision: {decision}")
     
     # Tool Execution Logic
     if "TRIGGER_SCAN" in decision: 
-        print("🚀 Executing Gmail Scan...")
+        logging.info("Executing Gmail Scan...")
         live_gmail_scan()
     elif "TRIGGER_PARSE" in decision:
-        print("🚀 Executing Document Parse...")
+        logging.info("Executing Document Parse...")
         files = list(UPLOAD_FOLDER.glob("*"))
         if files:
             setup_identity(str(files[-1]))
     elif "TRIGGER_DOWNLOAD" in decision:
-        print("🚀 Redirecting to Download...")
+        logging.info("Redirecting to Download...")
         return RedirectResponse(url="/download-checklist", status_code=303)
             
     return RedirectResponse(url="/", status_code=303)

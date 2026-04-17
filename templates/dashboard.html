@@ -2,18 +2,17 @@
 
 {% block content %}
 <section class="card">
-    <h2 class="logo" style="margin-bottom: 8px;">Agent Console</h2>
+    <h2 class="logo card-logo">Agent Console</h2>
     <p class="muted">AI-powered command center. Try scanning emails for financial footprints or generating a legal checklist.</p>
     
-    <form action="/agent-execute" method="post" class="upload-container" style="flex-direction: row; max-width: 100%;">
-        <input type="text" name="user_input" placeholder="e.g. 'Scan my mail'..." class="file-input" style="flex: 1;" required>
+    <form action="/agent-execute" method="post" class="upload-container agent-form">
+        <input type="text" name="user_input" placeholder="e.g. 'Scan my mail'..." class="file-input flex-1" required>
         <button type="submit" class="primary-btn">Execute</button>
     </form>
 </section>
 
-<div style="display: grid; grid-template-columns: 350px 1fr; gap: 32px;">
-    
-    <div style="display: flex; flex-direction: column; gap: 32px;">
+<div class="dashboard-grid">
+    <div class="dashboard-sidebar-col">
         <section class="card">
             <h3>Identity Status</h3>
             {% if identity_uploaded %}
@@ -31,13 +30,13 @@
         </section>
 
         <section class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="flex-between-center">
                 <h3>Financial Footprint</h3>
                 <form action="/run-scan" method="post">
-                    <button type="submit" class="muted" style="background:none; border:none; cursor:pointer; text-decoration:underline;">Run Scan</button>
+                    <button type="submit" class="muted link-btn">Run Scan</button>
                 </form>
             </div>
-            <ul style="list-style: none; padding: 0;">
+            <ul class="clean-list">
                 {% for asset in assets %}
                     <li class="list-item">
                         <span>{{ asset.institution }}</span>
@@ -51,58 +50,41 @@
     </div>
 
     <section class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div class="flex-between-center mb-24">
             <h2>Execution Tasks</h2>
             {% if tasks %}
-                <a href="/download-checklist" class="primary-btn" style="text-decoration: none; font-size: 0.8rem;">Download Plan</a>
+                <a href="/download-checklist" class="primary-btn small-btn">Download Plan</a>
             {% endif %}
         </div>
 
-        <div style="display: flex; flex-direction: column;">
-    {% for task in tasks %}
-        <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0;">
-            <div style="flex: 1;">
-                <div style="font-weight: 700; font-size: 1rem; color: var(--primary);">{{ task.title }}</div>
-                <div class="muted" style="font-size: 0.8rem; margin-top: 4px;">
-                    Required: {{ task.required_docs | join(', ') }}
+        <div class="task-list">
+        {% for task in tasks %}
+            <div class="list-item task-item">
+                <div class="task-info">
+                    <div class="task-title">{{ task.title }}</div>
+                    
+                    {% if 'Spotify' in task.title or 'Netflix' in task.title or 'Bill' in task.title %}
+                        <div class="task-quick-assist">
+                            <a href="/utility-letter/{{ loop.index0 }}/" class="quick-assist-btn">
+                               ⚡ QUICK ASSIST: GENERATE LETTER
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="muted">Required: {{ task.required_docs | join(', ') }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="task-actions">
+                    <a href="/fill-form/{{ loop.index0 }}/" class="muted preview-link">PREVIEW FORM</a>
+                    <span class="badge">{{ task.status }}</span>
                 </div>
             </div>
-            
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <a href="/fill-form/{{ loop.index0 }}/" class="muted" style="text-decoration: underline; font-size: 0.8rem; font-weight: 600;">
-                    PREVIEW FORM
-                </a>
-                
-                <span class="badge">{{ task.status }}</span>
-            </div>
-        </div>
-        <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0;">
-    <div style="flex: 1;">
-        <div style="font-weight: 700;">{{ task.title }}</div>
-        
-        {% if 'Spotify' in task.title or 'Netflix' in task.title or 'Bill' in task.title %}
-            <div style="margin-top: 8px;">
-                <a href="/utility-letter/{{ loop.index0 }}/" 
-                   style="background: #000; color: #fff; padding: 4px 8px; font-size: 0.65rem; text-decoration: none; font-weight: 800;">
-                   ⚡ QUICK ASSIST: GENERATE LETTER
-                </a>
-            </div>
         {% else %}
-            <div class="muted">Required: {{ task.required_docs | join(', ') }}</div>
-        {% endif %}
-    </div>
-    
-    <div style="display: flex; align-items: center; gap: 24px;">
-        <a href="/fill-form/{{ loop.index0 }}/" class="muted" style="text-decoration: underline; font-size: 0.75rem;">PREVIEW FORM</a>
-        <span class="badge">{{ task.status }}</span>
-    </div>
-</div>
-    {% else %}
-        <div style="text-align: center; padding: 60px; border: 1px dashed var(--border);">
-            <p class="muted">No tasks found. Trigger a scan to begin.</p>
+            <div class="empty-state">
+                <p class="muted">No tasks found. Trigger a scan to begin.</p>
+            </div>
+        {% endfor %}
         </div>
-    {% endfor %}
-</div>
     </section>
 </div>
 {% endblock %}

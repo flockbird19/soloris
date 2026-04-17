@@ -1,8 +1,15 @@
+import logging
+from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel
 from pathlib import Path
 from tools import DeathCertificateData, RequirementEngine, DocumentParser, EmailAssetScanner, SubscriptionManager, FormFiller
 from gmail_auth import get_gmail_service
+
+class TaskStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    BLOCKED = "blocked"
 
 # Init Shared Tools
 parser = DocumentParser()
@@ -18,7 +25,7 @@ class AssetInfo(BaseModel):
 class TaskInfo(BaseModel):
     task_id: str
     title: str
-    status: str = "pending"
+    status: TaskStatus = TaskStatus.PENDING
     dependencies: List[str] = []
     required_docs: List[str] = []
 
@@ -34,26 +41,26 @@ class GlobalContext:
         if not any(a.institution == asset.institution for a in self.assets):
             self.assets.append(asset)
 
-    def update_task(self, task_id: str, status: str):
+    def update_task(self, task_id: str, status: TaskStatus):
         for t in self.tasks:
             if t.task_id == task_id:
                 t.status = status
-                if status == "completed": self.completed_tasks.append(task_id)
+                if status == TaskStatus.COMPLETED: self.completed_tasks.append(task_id)
         self._unlock()
 
     def _unlock(self):
         for t in self.tasks:
-            if t.status == "blocked" and all(d in self.completed_tasks for d in t.dependencies):
-                t.status = "pending"
+            if t.status == TaskStatus.BLOCKED and all(d in self.completed_tasks for d in t.dependencies):
+                t.status = TaskStatus.PENDING
 
     def auto_populate_requirements(self, engine_ref: RequirementEngine, subscriptions: List[str]):
         if not any(t.task_id == "collect_dc" for t in self.tasks):
-            self.tasks.append(TaskInfo(task_id="collect_dc", title="Collect Death Certificate", status="pending"))
+            self.tasks.append(TaskInfo(task_id="collect_dc", title="Collect Death Certificate", status=TaskStatus.PENDING))
         for a in self.assets:
             self.tasks.append(TaskInfo(task_id=f"claim_{a.institution}", title=f"Claim {a.institution}", 
-                                     status="blocked", dependencies=["collect_dc"], required_docs=engine_ref.get_docs(a.asset_type)))
+                                     status=TaskStatus.BLOCKED, dependencies=["collect_dc"], required_docs=engine_ref.get_docs(a.asset_type)))
         for s in subscriptions:
-            self.tasks.append(TaskInfo(task_id=f"cancel_{s.lower()}", title=f"Cancel {s}", status="pending"))
+            self.tasks.append(TaskInfo(task_id=f"cancel_{s.lower()}", title=f"Cancel {s}", status=TaskStatus.PENDING))
 
 context = GlobalContext()
 
@@ -62,7 +69,9 @@ def setup_identity(path: str) -> str:
         identity_data = parser.parse_file(path)
         context.set_identity(identity_data)
         return f"✅ Verified: {identity_data.deceased_name}"
-    except Exception as e: return f"❌ Error: {str(e)}"
+    except Exception as e:
+        logging.error(f"Error setting up identity: {e}")
+        return f"❌ Error: {str(e)}"
 
 def live_gmail_scan() -> str:
     try:
@@ -79,4 +88,6 @@ def live_gmail_scan() -> str:
             all_subs.extend(sub_manager.scan_for_subscriptions(body))
         context.auto_populate_requirements(engine, list(set(all_subs)))
         return "✅ Scan Complete"
-    except Exception as e: return f"❌ Error: {str(e)}"
+    except Exception as e:
+        logging.error(f"Error during Gmail scan: {e}")
+        return f"❌ Error: {str(e)}"
