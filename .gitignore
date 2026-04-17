@@ -3,3 +3,13 @@ token.json
 credentials.json
 .venv/
 __pycache__/
+
+# User Data & Generated Files
+static/downloads/
+static/uploads/
+*.pdf
+*session*.json
+
+# OS Files
+.DS_Store
+Thumbs.db
